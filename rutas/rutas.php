@@ -1,24 +1,5 @@
 <?php 
-/*
-$url = "http://restful-php-torres.com/post";
 
-$curl = curl_init($url);
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-$headers = array(
-   "Accept: application/json",
-   "Authorization: Bearer {token}",
-);
-curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-//for debug only!
-curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-
-$resp = curl_exec($curl);
-curl_close($curl);
-var_dump($resp);
- */
 $arrayRutas = explode("/", $_SERVER['REQUEST_URI']);
 
 if(count(array_filter($arrayRutas)) == 0){
@@ -41,57 +22,55 @@ if(count(array_filter($arrayRutas)) == 0){
 
 	if(count(array_filter($arrayRutas)) == 1){			
 		
-		/*=============================================
-		Cuando se hace peticiones desde registro
-		=============================================*/
+		$uri = explode("?", array_filter($arrayRutas)[1]);
+		$countUri = count($uri);		
 
-		if(array_filter($arrayRutas)[1] == "login"){
+		if($countUri == 1){
 
-			/*=============================================
-			Peticiones POST
-			=============================================*/
-
-			if(isset($_SERVER["REQUEST_METHOD"]) && $_SERVER["REQUEST_METHOD"] == "POST"){
+			if(array_filter($arrayRutas)[1] == "login"){
 
 				/*=============================================
-				Capturar datos
+				Peticiones POST
 				=============================================*/
-
-				$datos = array( "email"=>$_POST["email"],
-								"password"=>$_POST["password"]
-								);
-
-				$login = new LoginController();
-				$login -> login($datos);
-
-			}else{
-
-				$json = array(
-
-					"detalle"=>"no encontrado"
-
-				);
-
-				echo json_encode($json, true);
-
-				return;
-
+	
+				if(isset($_SERVER["REQUEST_METHOD"]) && $_SERVER["REQUEST_METHOD"] == "POST"){
+	
+					/*=============================================
+					Capturar datos
+					=============================================*/
+	
+					$datos = array( "email"=>$_POST["email"],
+									"password"=>$_POST["password"]
+									);
+	
+					$login = new LoginController();
+					$login -> login($datos);
+	
+				}else{
+	
+					$json = array(
+	
+						"detalle"=>"no encontrado"
+	
+					);
+	
+					echo json_encode($json, true);
+	
+					return;
+	
+				}
+	
 			}
 
-		}else if(array_filter($arrayRutas)[1] == "post"){
-
-			/*=============================================
+		}else if($uri[0] == "post"){
 			
-			=============================================*/
-
 			if(isset($_SERVER["REQUEST_METHOD"]) && $_SERVER["REQUEST_METHOD"] == "GET"){
-
 			
-
-				$token = $_GET["token"];
-				print_r($token); return;
+				$datos = array( "token"=>$_GET["token"],									
+								);
+				//print_r($token); return;
 				$post = new PostController();
-				$post -> index(null);
+				$post -> index($datos);
 
 			}else{
 
@@ -146,7 +125,9 @@ if(count(array_filter($arrayRutas)) == 0){
 								"email"=>$_POST["email"],
 								"password"=>$_POST["password"],
 								"rol_id"=>$_POST["rol_id"],
-								"status"=>$_POST["status"]);
+								"status"=>$_POST["status"],
+								"token"=>$_POST["token"]
+								);				
 
 				$registro = new UsersController();
 				$registro -> create($datos);	
@@ -180,9 +161,10 @@ if(count(array_filter($arrayRutas)) == 0){
 				$datos = array( "title"=>$_POST["title"],
 								"description"=>$_POST["description"],
 								"status"=>$_POST["status"],
-								"user_created_id"=>$_POST["user_created_id"]
+								"user_created_id"=>$_POST["user_created_id"],
+								"token"=>$_POST["token"]
 								);
-
+				//print_r($datos); return;
 				$post = new PostController();
 				$post -> create($datos);	
 
@@ -219,6 +201,35 @@ if(count(array_filter($arrayRutas)) == 0){
 
 				$editarPost = new PostController();
 				$editarPost -> update(array_filter($arrayRutas)[3], $datos);
+
+			}else{
+
+				$json = array(
+
+					"detalleq"=>"no encontrado"
+
+				);
+
+				echo json_encode($json, true);
+
+				return;
+
+			}
+
+		}else if(array_filter($arrayRutas)[1] == "post" && array_filter($arrayRutas)[2] == "delete" && is_numeric(array_filter($arrayRutas)[3])){
+
+			/*=============================================
+			Peticiones POST
+			=============================================*/
+
+			if(isset($_SERVER["REQUEST_METHOD"]) && $_SERVER["REQUEST_METHOD"] == "PUT"){
+
+				$datos = array();
+
+				parse_str(file_get_contents('php://input'), $datos);
+
+				$deletePost = new PostController();
+				$deletePost -> delete(array_filter($arrayRutas)[3], $datos);
 
 			}else{
 

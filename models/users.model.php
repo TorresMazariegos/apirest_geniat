@@ -22,6 +22,40 @@ class UsersModel{
 	}
 
 	/*=============================================
+		Valida roles y permisos
+	=============================================*/
+
+	static public function validatePermission($user_id, $permiso){
+		//print_r("Prueba");
+		//return;
+		$stmt = Conexion::conectar()->prepare("SELECT * FROM users
+		inner join roles on users.rol_id = roles.id
+		inner join roles_has_permissions as rpe on roles.id = rpe.rol_id
+		inner join permissions as per on per.id = rpe.permission_id 
+		where users.id = $user_id and per.name like '$permiso'");
+
+		$stmt -> execute();
+		$num = $stmt->rowCount();
+		//print_r($stmt);
+		//print_r('R: '.$num);
+		//return;
+		if($num == 1){
+			
+			return True;
+
+		}else{
+
+			return False;
+
+		}
+		//return $stmt -> fetchAll();
+	    $stmt -> close();
+	    $stmt -= null;
+	}
+
+	
+
+	/*=============================================
 	Crear un registro
 	=============================================*/
 

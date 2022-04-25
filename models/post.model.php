@@ -66,7 +66,7 @@ class PostModel{
 
 		$stmt -> execute();
 
-		return $stmt -> fetchAll(PDO::FETCH_CLASS);
+		return $stmt -> fetch();
 
 	    $stmt -> close();
 
@@ -75,21 +75,23 @@ class PostModel{
 	}
 	
 	/*=============================================
-	Actualización de un curso
+	Update post
 	=============================================*/
 
 	static public function update($datos){
 
-		$stmt = Conexion::conectar()->prepare("UPDATE post SET title=:title, description=:description, status=:status, user_created_id=:user_created_id , updated_at=:updated_at WHERE id = :id");
+		$stmt1 = Conexion::conectar()->prepare("UPDATE post SET title=:title, description=:description, status=:status, user_created_id=:user_created_id , updated_at=:updated_at WHERE id = :id");
 
-		$stmt -> bindParam(":id", $datos["id"], PDO::PARAM_INT);
-		$stmt -> bindParam(":title", $datos["title"], PDO::PARAM_STR);
-		$stmt -> bindParam(":description", $datos["description"], PDO::PARAM_STR);
-		$stmt -> bindParam(":status", $datos["status"], PDO::PARAM_STR);
-		$stmt -> bindParam(":user_created_id", $datos["user_created_id"], PDO::PARAM_STR);		
-		$stmt -> bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
+		$stmt1 -> bindParam(":id", $datos["id"], PDO::PARAM_INT);
+		$stmt1 -> bindParam(":title", $datos["title"], PDO::PARAM_STR);
+		$stmt1 -> bindParam(":description", $datos["description"], PDO::PARAM_STR);
+		$stmt1 -> bindParam(":status", $datos["status"], PDO::PARAM_STR);
+		$stmt1 -> bindParam(":user_created_id", $datos["user_created_id"], PDO::PARAM_STR);		
+		$stmt1 -> bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
 
-		if($stmt -> execute()){
+		//print_r($stmt1->execute());
+		//return;
+		if($stmt1->execute()){
 
 			return "ok";
 
@@ -98,19 +100,19 @@ class PostModel{
 			print_r(Conexion::conectar()->errorInfo());
 		}
 
-		$stmt-> close();
+		$stmt1-> close();
 
-		$stmt = null;
+		$stmt1 = null;
 
 	}
 
 	/*=============================================
-	Borrar curso
+	Delete post
 	=============================================*/
 
-	static public function delete($tabla, $id){
+	static public function delete($id){
 
-		$stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE id = :id");
+		$stmt = Conexion::conectar()->prepare("UPDATE post SET status = 0 where id = $id");
 
 		$stmt -> bindParam(":id", $id, PDO::PARAM_INT);
 

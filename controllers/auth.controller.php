@@ -1,10 +1,13 @@
 <?php
 require_once 'vendor/autoload.php';
+
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
 class Auth
 {
     private static $secret_key = 'Sdw1s9x8@';
+    private static $encrypt = ['HS256'];
     private static $aud = null;
 
     public static function SignIn($data)
@@ -22,30 +25,38 @@ class Auth
 
     public static function Check($token)
     {
+
         if(empty($token))
         {
             throw new Exception("Invalid token supplied.");
         }
 
-        $decode = JWT::decode(
-            $token,
-            self::$secret_key,
-            self::$encrypt
-        );
+        $decode = JWT::decode($token, new Key(self::$secret_key, 'HS256'));
 
         if($decode->aud !== self::Aud())
         {
             throw new Exception("Invalid user logged in.");
+        }else{
+            return True;
         }
+        
     }
 
-    public static function GetData($token)
+    public static function ValidateRol($token, $permiso)
     {
-        return JWT::decode(
-            $token,
-            self::$secret_key,
-            self::$encrypt
-        )->data;
+        //print_r($token);
+        $data = JWT::decode($token, new Key(self::$secret_key, 'HS256'))->data;
+       
+        $data = $data->id ;
+        $post = UsersModel::validatePermission($data, $permiso);
+        //print_r($post);
+        return $post;
+        
+        //return $post;
+        // [id] => 9
+        // [email] => correo1@gmail.com
+        // [rol_id] => 1
+
     }
 
     private static function Aud()

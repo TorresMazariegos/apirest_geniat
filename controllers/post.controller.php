@@ -1,86 +1,78 @@
 <?php 
-
+require_once 'vendor/autoload.php';
 class PostController{
 
 	/*=============================================
 	Mostrar todos los registros
 	=============================================*/
 
-	public function index($page){
+	public function index($datos){
 
-		/*=============================================
-		Validar credenciales del cliente
-		=============================================*/
+		// Validate permissions		
+        $token = Auth::Check($datos['token']);
+        $permission = Auth::ValidateRol($datos['token'], 'consulta');
+        //print_r($token); 
 
-		//$clientes = UsersModel::index();
+        if($token){
 
-		//if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])){
-
-			//foreach ($clientes as $key => $valueCliente) {
+            if($permission){
 				
-				//if( "Basic ".base64_encode($_SERVER['PHP_AUTH_USER'].":".$_SERVER['PHP_AUTH_PW']) == 
-					//"Basic ".base64_encode($valueCliente["id_cliente"].":".$valueCliente["llave_secreta"]) ){				
+                $post = PostModel::index();                
 
-					
+                if(!empty($post)){
 
-                    $post = PostModel::index();
+                    $json = array(
 
-					
+                        "status"=>200,
+                        "total_registros"=>count($post),
+                        "detalle"=>$post
 
-					if(!empty($post)){
+                    );
 
-						$json = array(
+                    echo json_encode($json, true);
 
-							"status"=>200,
-							"total_registros"=>count($post),
-							"detalle"=>$post
+                    return;
 
-						);
+                }else{
 
-						echo json_encode($json, true);
+                    $json = array(
 
-						return;
+                        "status"=>200,
+                        "total_registros"=>0,
+                        "detalles"=>"No hay ningún post registrado"
+                        
+                    );
 
-					}else{
+                    echo json_encode($json, true);	
 
-						$json = array(
+                    return;
 
-				    		"status"=>200,
-				    		"total_registros"=>0,
-				    		"detalles"=>"No hay ningún curso registrado"
-				    		
-				    	);
-
-						echo json_encode($json, true);	
-
-						return;
-
-					}
+                }
 
 
-				/*}else{
+            }else{
 
-					$json = array(
+                $json = array(
 
-			    		"status"=>404,
-			    		"detalles"=>"El token es inválido"
-			    		
-			    	);
+                    "status"=>404,
+                    "detalles"=>"No cuenta con los permisos para esta acción"
+                    
+                );
 
-				}*/
+            }
 
-			//}
+			
 
-		/*}else{
+		}else{
 
 			$json = array(
 
 	    		"status"=>404,
-	    		"detalles"=>"No está autorizado para recibir los registros"
+	    		"detalles"=>"El token es inválido"
 	    		
 	    	);
 
-		}*/
+		}
 
 		echo json_encode($json, true);	
 
@@ -91,142 +83,131 @@ class PostController{
 	}
 
 	/*=============================================
-	Crear un curso
+	Crear un post
 	=============================================*/
 
 	public function create($datos){
 
-		/*=============================================
-		Validar credenciales del cliente
-		=============================================*/
+        
+		// Validate permissions		
+        $token = Auth::Check($datos['token']);
+        $permission = Auth::ValidateRol($datos['token'], 'agregar');
+        //print_r($token); 
 
-		//$clientes = UsersModel::index("clientes");
+        if($token){
 
-		//if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])){
+            if($permission){
 
-			//foreach ($clientes as $key => $valueCliente) {
-				
-				//if( "Basic ".base64_encode($_SERVER['PHP_AUTH_USER'].":".$_SERVER['PHP_AUTH_PW']) == 
-				//	"Basic ".base64_encode($valueCliente["id_cliente"].":".$valueCliente["llave_secreta"]) ){
+                foreach ($datos as $key => $valueDatos) {
 
-					/*=============================================
-					data validation
-					=============================================*/
+                    if(isset($valueDatos) && !preg_match('/^[(\\)\\=\\&\\$\\;\\-\\_\\*\\"\\<\\>\\?\\¿\\!\\¡\\:\\,\\.\\0-9a-zA-ZñÑáéíóúÁÉÍÓÚ ]+$/', $valueDatos)){
 
-					foreach ($datos as $key => $valueDatos) {
+                        $json = array(
 
-						if(isset($valueDatos) && !preg_match('/^[(\\)\\=\\&\\$\\;\\-\\_\\*\\"\\<\\>\\?\\¿\\!\\¡\\:\\,\\.\\0-9a-zA-ZñÑáéíóúÁÉÍÓÚ ]+$/', $valueDatos)){
+                            "status"=>404,
+                            "detalle"=>"Error en el campo ".$key
 
-							$json = array(
+                        );
 
-								"status"=>404,
-								"detalle"=>"Error en el campo ".$key
+                        echo json_encode($json, true);
 
-							);
+                        return;
+                    }
 
-							echo json_encode($json, true);
+                }
 
-							return;
-						}
+                /*=============================================
+                Validar que el titulo o la descripcion no estén repetidos
+                =============================================*/
 
-					}
+                $post = PostModel::index();
+                
+                foreach ($post as $key => $value) {
+                    
+                    if($value->title == $datos["title"]){
 
-					/*=============================================
-					Validar que el titulo o la descripcion no estén repetidos
-					=============================================*/
+                        $json = array(
 
-					$post = PostModel::index();
-					
-					foreach ($post as $key => $value) {
-						
-						if($value->title == $datos["title"]){
+                            "status"=>404,
+                            "detalle"=>"El título ya existe en la base de datos"
 
-							$json = array(
+                        );
 
-								"status"=>404,
-								"detalle"=>"El título ya existe en la base de datos"
+                        echo json_encode($json, true);	
 
-							);
+                        return;
 
-							echo json_encode($json, true);	
+                    }
 
-							return;
+                    if($value->description == $datos["description"]){
 
-						}
+                        $json = array(
 
-						if($value->description == $datos["description"]){
+                            "status"=>404,
+                            "detalle"=>"La descripción ya existe en la base de datos"
 
-							$json = array(
+                        );
 
-								"status"=>404,
-								"detalle"=>"La descripción ya existe en la base de datos"
+                        echo json_encode($json, true);	
 
-							);
+                        return;
 
-							echo json_encode($json, true);	
+                        
+                    }
 
-							return;
+                }
 
-							
-						}
+            
+                /*=============================================
+                Llevar datos al modelo
+                =============================================*/
 
-					}
+                $datos = array( "title"=>$datos["title"],
+                                "description"=>$datos["description"],
+                                "status"=>$datos["status"],
+                                "user_created_id"=>$datos["user_created_id"],
+                                "created_at"=>date('Y-m-d h:i:s'),
+                                "updated_at"=>date('Y-m-d h:i:s'));
 
-				
-					/*=============================================
-					Llevar datos al modelo
-					=============================================*/
-	
-					$datos = array( "title"=>$datos["title"],
-									"description"=>$datos["description"],
-									"status"=>$datos["status"],
-									"user_created_id"=>$datos["user_created_id"],
-									"created_at"=>date('Y-m-d h:i:s'),
-									"updated_at"=>date('Y-m-d h:i:s'));
+                $create = PostModel::create($datos);
 
-					$create = PostModel::create($datos);
+                /*=============================================
+                Respuesta del modelo
+                =============================================*/
 
-					/*=============================================
-					Respuesta del modelo
-					=============================================*/
+                if($create == "ok"){
 
-					if($create == "ok"){
+                    $json = array(
+                        "status"=>200,
+                        "detalle"=>"Registro exitoso, su post ha sido guardado"
 
-				    	$json = array(
-			        	 	"status"=>200,
-				    		"detalle"=>"Registro exitoso, su curso ha sido guardado"
+                    ); 
+                    
+                    echo json_encode($json, true); 
 
-				    	); 
-				    	
-				    	echo json_encode($json, true); 
+                    return;    	
 
-				    	return;    	
+                }
+            }else{
 
-			   	 	}
-				
-				/*}else{
+                $json = array(
 
-					$json = array(
+                    "status"=>404,
+                    "detalles"=>"No cuenta con los permisos para esta acción"
+                    
+                );
 
-			    		"status"=>404,
-			    		"detalles"=>"El token es inválido"
-			    		
-			    	);
+            }
+        }else{
 
-				}*/
+            $json = array(
 
-			//}
+                "status"=>404,
+                "detalles"=>"El token es inválido"
+                
+            );
 
-		/*}else{
-
-			$json = array(
-
-	    		"status"=>404,
-	    		"detalles"=>"No está autorizado para recibir los registros"
-	    		
-	    	);
-
-		}*/
+        }
 
 		echo json_encode($json, true);	
 
@@ -241,74 +222,38 @@ class PostController{
 	public function show($id){
 
 		
-		//$clientes = UsersModel::index("clientes");
+		
 
-		//if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])){
+        $post = PostModel::show($id);
+        print_r($post); return;
+        if(!empty($post)){
 
-			//foreach ($clientes as $key => $valueCliente) {
-				
-				//if( "Basic ".base64_encode($_SERVER['PHP_AUTH_USER'].":".$_SERVER['PHP_AUTH_PW']) == 
-					//"Basic ".base64_encode($valueCliente["id_cliente"].":".$valueCliente["llave_secreta"]) ){
+            $json = array(
 
-					/*=============================================
-					Mostrar todos los cursos
-					=============================================*/
+                "status"=>200,
+                "detalle"=>$post
 
-					$post = PostModel::show($id);
-                    print_r($post); return;
-					if(!empty($post)){
+            );
 
-						$json = array(
+            echo json_encode($json, true);
 
-							"status"=>200,
-							"detalle"=>$post
+            return;
 
-						);
+        }else{
 
-						echo json_encode($json, true);
+            $json = array(
 
-						return;
+                "status"=>200,
+                "total_registros"=>0,
+                "detalles"=>"No hay ningún post registrado"
+                
+            );
 
-					}else{
+            echo json_encode($json, true);	
 
-						$json = array(
+            return;
 
-				    		"status"=>200,
-				    		"total_registros"=>0,
-				    		"detalles"=>"No hay ningún curso registrado"
-				    		
-				    	);
-
-						echo json_encode($json, true);	
-
-						return;
-
-					}
-
-
-				/*}else{
-
-					$json = array(
-
-			    		"status"=>404,
-			    		"detalles"=>"El token es inválido"
-			    		
-			    	);
-
-				}
-
-			}
-
-		}else{
-
-			$json = array(
-
-	    		"status"=>404,
-	    		"detalles"=>"No está autorizado para recibir los registros"
-	    		
-	    	);
-
-		}*/
+        }
 
 		echo json_encode($json, true);	
 
@@ -322,121 +267,97 @@ class PostController{
 
 	public function update($id, $datos){
 
-		/*=============================================
-		Validar credenciales del cliente
-		=============================================*/
+        
+		// Validate permissions		
+        $token = Auth::Check($datos['token']);
+        $permission = Auth::ValidateRol($datos['token'], 'eliminar');
+        //print_r($permission); 
 
-		//$clientes = UsersModel::index("clientes");
+        if($token){
 
-		//if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])){
+            if($permission){
 
-			//foreach ($clientes as $key => $valueCliente) {
-				
-				//if( "Basic ".base64_encode($_SERVER['PHP_AUTH_USER'].":".$_SERVER['PHP_AUTH_PW']) == 
-				//	"Basic ".base64_encode($valueCliente["id_cliente"].":".$valueCliente["llave_secreta"]) ){
+                foreach ($datos as $key => $valueDatos) {
 
-					/*=============================================
-					Data validation
-					=============================================*/
+                    if(isset($valueDatos) && !preg_match('/^[(\\)\\=\\&\\$\\;\\-\\_\\*\\"\\<\\>\\?\\¿\\!\\¡\\:\\,\\.\\0-9a-zA-ZñÑáéíóúÁÉÍÓÚ ]+$/', $valueDatos)){
 
-					foreach ($datos as $key => $valueDatos) {
+                        $json = array(
 
-						if(isset($valueDatos) && !preg_match('/^[(\\)\\=\\&\\$\\;\\-\\_\\*\\"\\<\\>\\?\\¿\\!\\¡\\:\\,\\.\\0-9a-zA-ZñÑáéíóúÁÉÍÓÚ ]+$/', $valueDatos)){
+                            "status"=>404,
+                            "detalle"=>"Error en el campo ".$key
 
-							$json = array(
+                        );
 
-								"status"=>404,
-								"detalle"=>"Error en el campo ".$key
+                        echo json_encode($json, true);
 
-							);
+                        return;
+                    }
 
-							echo json_encode($json, true);
+                }
 
-							return;
-						}
+                /*=============================================
+                Validation of id user created
+                =============================================*/
 
-					}
+                $post = PostModel::show($id);
+                //print_r($post); return;
+                foreach ($post as $key => $value) {
 
-					/*=============================================
-					Validation of id user created
-					=============================================*/
+                        /*=============================================
+                        Llevar datos al modelo
+                        =============================================*/
+        
+                        $datos = array( "id"=>$id,
+                                        "title"=>$datos["title"],
+                                        "description"=>$datos["description"],
+                                        "status"=>$datos["status"],
+                                        "user_created_id"=>$datos["user_created_id"],
+                                        "updated_at"=>date('Y-m-d h:i:s'));
 
-					$curso = PostModel::show($id);
+                        $update = PostModel::update($datos);
 
-					foreach ($curso as $key => $valueCurso) {
-						
-						if($valueCurso->user_created_id == 1){
+                        /*=============================================
+                        Respuesta del modelo
+                        =============================================*/
 
-							/*=============================================
-							Llevar datos al modelo
-							=============================================*/
+                        if($update == "ok"){
+
+                            $json = array(
+                                "status"=>200,
+                                "detalle"=>"Registro exitoso, su post ha sido actualizado"
+
+                            ); 
+                            
+                            echo json_encode($json, true); 
+
+                            return;    	
+
+                        }
+
+                }
+    
+            }else{
+
+                $json = array(
+
+                    "status"=>404,
+                    "detalles"=>"No cuenta con los permisos para esta acción"
+                    
+                );
+
+            }
 			
-							$datos = array( "id"=>$id,
-											"title"=>$datos["title"],
-											"description"=>$datos["description"],
-											"status"=>$datos["status"],
-											"updated_at"=>date('Y-m-d h:i:s'));
-
-							$update = PostModel::update($datos);
-
-							/*=============================================
-							Respuesta del modelo
-							=============================================*/
-
-							if($update == "ok"){
-
-						    	$json = array(
-					        	 	"status"=>200,
-						    		"detalle"=>"Registro exitoso, su curso ha sido actualizado"
-
-						    	); 
-						    	
-						    	echo json_encode($json, true); 
-
-						    	return;    	
-
-					   	 	}
-
-						}else{
-
-							$json = array(
-
-						    		"status"=>404,
-						    		"detalle"=>"No está autorizado para modificar este curso"
-						    	
-						    	);
-
-					    	echo json_encode($json, true);
-
-					    	return;
-
-						}
-
-					}
-		
-				/*}else{
-
-					$json = array(
-
-			    		"status"=>404,
-			    		"detalles"=>"El token es inválido"
-			    		
-			    	);
-
-				}
-
-			}
 
 		}else{
 
 			$json = array(
 
 	    		"status"=>404,
-	    		"detalles"=>"No está autorizado para recibir los registros"
+	    		"detalles"=>"El token es inválido"
 	    		
 	    	);
 
-		}*/
+		}
 
 		echo json_encode($json, true);	
 
@@ -445,94 +366,64 @@ class PostController{
 	}
 
 	/*=============================================
-	Borrar curso
+	Borrar post
 	=============================================*/
 
-	public function delete($id){
+	public function delete($id, $datos){
 
-		/*=============================================
-		Validar credenciales del cliente
-		=============================================*/
+		// Validate permissions		
+        $token = Auth::Check($datos['token']);
+        $permission = Auth::ValidateRol($datos['token'], 'actualizar');
+        //print_r($permission); 
 
-		$clientes = UsersModel::index("clientes");
+        if($token){
 
-		if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])){
+            if($permission){
 
-			foreach ($clientes as $key => $valueCliente) {
-				
-				if( "Basic ".base64_encode($_SERVER['PHP_AUTH_USER'].":".$_SERVER['PHP_AUTH_PW']) == 
-					"Basic ".base64_encode($valueCliente["id_cliente"].":".$valueCliente["llave_secreta"]) ){
+                $post = PostModel::show($id);
 
-					/*=============================================
-					Validar id creador
-					=============================================*/
+                foreach ($post as $key => $valuepost) {                   
+                        
+                        $delete = PostModel::delete( $id);
 
-					$curso = ModeloCursos::show("cursos","clientes", $id);
+                        /*=============================================
+                        Respuesta del modelo
+                        =============================================*/
 
-					foreach ($curso as $key => $valueCurso) {
-						
-						if($valueCurso->id_creador == $valueCliente["id"]){
+                        if($delete == "ok"){
 
-							/*=============================================
-							Llevar datos al modelo
-							=============================================*/
-						
-							$delete = ModeloCursos::delete("cursos", $id);
+                            $json = array(
+                                "status"=>200,
+                                "detalle"=>"Se ha borrado su post con éxito"
 
-							/*=============================================
-							Respuesta del modelo
-							=============================================*/
+                            ); 
+                            
+                            echo json_encode($json, true); 
 
-							if($delete == "ok"){
+                            return;    	
 
-						    	$json = array(
-					        	 	"status"=>200,
-						    		"detalle"=>"Se ha borrado su curso con éxito"
+                        }                    
 
-						    	); 
-						    	
-						    	echo json_encode($json, true); 
-
-						    	return;    	
-
-					   	 	}
-
-						}else{
-
-							$json = array(
-
-						    		"status"=>404,
-						    		"detalle"=>"No está autorizado para borrar este curso"
-						    	
-						    	);
-
-					    	echo json_encode($json, true);
-
-					    	return;
-
-						}
-
-					}
+                }
 		
-				}else{
+            }else{
 
-					$json = array(
+                $json = array(
 
-			    		"status"=>404,
-			    		"detalles"=>"El token es inválido"
-			    		
-			    	);
+                    "status"=>404,
+                    "detalles"=>"No cuenta con los permisos para esta acción"
+                    
+                );
 
-				}
-
-			}
+            }
+			
 
 		}else{
 
 			$json = array(
 
 	    		"status"=>404,
-	    		"detalles"=>"No está autorizado para recibir los registros"
+	    		"detalles"=>"El token es inválido"
 	    		
 	    	);
 
